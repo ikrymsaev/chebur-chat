@@ -1,5 +1,5 @@
 import { effect, inject, View } from "@helfy/helfy";
-import type { ChatStore } from "../ChatStore";
+import type { ChatStore } from "@storage/index";
 
 @View
 export class MessageList {

@@ -1,5 +1,5 @@
 import { View } from "@helfy/helfy";
-import type { ConnectionState } from "@shared/peer/types";
+import type { ConnectionState } from "@interfaces/chat";
 
 interface Props {
   state: ConnectionState 

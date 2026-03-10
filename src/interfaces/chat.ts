@@ -18,3 +18,11 @@ export interface ChatPayload {
   senderId: string;
   timestamp: number;
 }
+
+export type VideoCallState =
+  | "idle"
+  | "requesting"
+  | "incoming"
+  | "active"
+  | "ended"
+  | "error";

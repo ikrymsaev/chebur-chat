@@ -17,6 +17,10 @@
       "@shared/*": ["./shared/*"],
       "@features/*": ["./features/*"],
       "@widgets/*": ["./widgets/*"],
+      "@services/*": ["./services/*"],
+      "@storage/*": ["./storage/*"],
+      "@use-cases/*": ["./use-cases/*"],
+      "@interfaces/*": ["./interfaces/*"],
     }
   },
   "include": ["src/**/*", ".helfy/**/*", "declaration.d.ts"]

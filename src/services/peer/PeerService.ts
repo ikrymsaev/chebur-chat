@@ -1,22 +1,9 @@
-import { DataConnection, Peer } from "peerjs";
+import { DataConnection, MediaConnection, Peer } from "peerjs";
 import { Service, logger, type ILogger } from "@helfy/helfy";
-import type { ChatPayload, ConnectionState } from "./types";
+import type { ChatPayload, ConnectionState } from "../../interfaces/chat";
 import { nanoid } from "nanoid";
+import type { PeerService, PeerServiceCallbacks, PeerServiceVideoCallbacks } from "./interface";
 
-export interface PeerService {
-  createRoom(): string;
-  joinRoom(roomId: string): void;
-  send(payload: ChatPayload): boolean;
-  disconnect(): void;
-  setCallbacks(cb: PeerServiceCallbacks | null): void;
-}
-
-export interface PeerServiceCallbacks {
-  onConnected: (localPeerId: string, remotePeerId: string) => void;
-  onDisconnected: () => void;
-  onMessage: (payload: ChatPayload) => void;
-  onStateChange: (state: ConnectionState) => void;
-}
 
 const PEER_OPTIONS = {
   host: "localhost",
@@ -32,10 +19,16 @@ export class PeerServiceImpl implements PeerService {
 
   private peer: Peer | null = null;
   private connection: DataConnection | null = null;
+  private mediaConnection: MediaConnection | null = null;
   private callbacks: PeerServiceCallbacks | null = null;
+  private videoCallbacks: PeerServiceVideoCallbacks | null = null;
 
   setCallbacks(cb: PeerServiceCallbacks | null) {
     this.callbacks = cb;
+  }
+
+  setVideoCallbacks(cb: PeerServiceVideoCallbacks | null) {
+    this.videoCallbacks = cb;
   }
 
   private emitState(state: ConnectionState) {
@@ -58,6 +51,8 @@ export class PeerServiceImpl implements PeerService {
       this.connection = conn;
       this.setupConnection(conn, roomId, conn.peer);
     });
+
+    this.setupPeerCallHandler();
 
     this.peer.on("error", (err) => {
       this.log.error("Peer error", { error: err });
@@ -91,6 +86,8 @@ export class PeerServiceImpl implements PeerService {
       this.connection = conn;
       this.setupConnection(conn, localId, roomId);
     });
+
+    this.setupPeerCallHandler();
 
     this.peer.on("error", (err) => {
       this.log.error("Peer error", { error: err });
@@ -156,6 +153,7 @@ export class PeerServiceImpl implements PeerService {
   }
 
   disconnect(): void {
+    this.endVideoCall();
     if (this.connection) {
       this.connection.close();
       this.connection = null;
@@ -164,7 +162,64 @@ export class PeerServiceImpl implements PeerService {
       this.peer.destroy();
       this.peer = null;
     }
+    this.mediaConnection = null;
     this.callbacks = null;
+    this.videoCallbacks = null;
     this.emitState("idle");
+  }
+
+  private setupPeerCallHandler(): void {
+    if (!this.peer) return;
+    this.peer.on("call", (call: MediaConnection) => {
+      this.log.info("Incoming video call", { from: call.peer });
+      this.videoCallbacks?.onIncomingCall(call, call.peer);
+    });
+  }
+
+  callVideo(remotePeerId: string, localStream: MediaStream): MediaConnection | null {
+    if (!this.peer) {
+      this.log.warn("callVideo: no peer");
+      return null;
+    }
+    this.log.info("Starting video call", { remotePeerId });
+    const call = this.peer.call(remotePeerId, localStream);
+    if (!call) {
+      this.log.warn("callVideo: peer.call returned null");
+      return null;
+    }
+    this.mediaConnection = call;
+    this.setupMediaConnection(call);
+    return call;
+  }
+
+  answerVideo(call: MediaConnection, localStream: MediaStream): void {
+    this.log.info("Answering video call");
+    this.mediaConnection = call;
+    this.setupMediaConnection(call);
+    call.answer(localStream);
+  }
+
+  private setupMediaConnection(call: MediaConnection): void {
+    call.on("stream", (stream: MediaStream) => {
+      this.log.info("Remote stream received");
+      this.videoCallbacks?.onRemoteStream(stream);
+    });
+    call.on("close", () => {
+      this.log.info("Media connection closed");
+      this.mediaConnection = null;
+      this.videoCallbacks?.onVideoCallEnded();
+    });
+    call.on("error", (err) => {
+      this.log.error("Media connection error", { error: err });
+      this.mediaConnection = null;
+      this.videoCallbacks?.onVideoCallEnded();
+    });
+  }
+
+  endVideoCall(): void {
+    if (this.mediaConnection) {
+      this.mediaConnection.close();
+      this.mediaConnection = null;
+    }
   }
 }

@@ -1,8 +1,9 @@
 import { UseCase, logger, type ILogger } from "@helfy/helfy";
 import { nanoid } from "nanoid";
-import type { PeerService } from "@shared/peer/PeerService";
-import type { Message } from "@shared/peer/types";
-import { ChatStore, ChatUseCase } from "./interfaces";
+import type { PeerService } from "@services/index";
+import type { Message } from "@interfaces/chat";
+import type { ChatStore, VideoStore } from "@storage/index";
+import type { ChatUseCase } from "./interfaces";
 
 
 @UseCase<ChatUseCase>()
@@ -11,7 +12,8 @@ export class ChatUseCaseImpl implements ChatUseCase {
 
   constructor(
     private readonly store: ChatStore,
-    private readonly peerService: PeerService
+    private readonly peerService: PeerService,
+    private readonly videoStore: VideoStore
   ) {}
 
   createRoom(): string {
@@ -110,6 +112,7 @@ export class ChatUseCaseImpl implements ChatUseCase {
 
   leaveRoom(): void {
     this.peerService.disconnect();
+    this.videoStore.reset();
     this.store.reset();
   }
 }

@@ -1,6 +1,6 @@
 import { View, inject, state, router, effect, type RouterAPI } from "@helfy/helfy";
-import type { ChatStore } from "../ChatStore";
-import type { ChatUseCase } from "../ChatUseCase";
+import type { ChatStore } from "@storage/index";
+import type { ChatUseCase } from "@use-cases/index";
 
 @View
 export class LobbyPage {
@@ -16,7 +16,10 @@ export class LobbyPage {
   @effect
   navigateWhenConnected() {
     if (this.store.connectionState === "connected") {
-      this.router.push("/chat");
+      const timer = setTimeout(() => {
+        this.router.push("/chat");
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }
 

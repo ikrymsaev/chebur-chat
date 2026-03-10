@@ -38,6 +38,10 @@ module.exports = {
       '@shared': path.resolve(__dirname, 'src/shared'),
       '@widgets': path.resolve(__dirname, 'src/widgets'),
       '@features': path.resolve(__dirname, 'src/features'),
+      '@services': path.resolve(__dirname, 'src/services'),
+      '@storage': path.resolve(__dirname, 'src/storage'),
+      '@use-cases': path.resolve(__dirname, 'src/use-cases'),
+      '@interfaces': path.resolve(__dirname, 'src/interfaces'),
     },
   },
   plugins: [

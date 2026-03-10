@@ -1,6 +1,6 @@
 import { Store, state } from "@helfy/helfy";
-import type { Message, ConnectionState } from "@shared/peer/types";
-import { ChatStore } from "./interfaces";
+import type { Message, ConnectionState } from "@interfaces/chat";
+import type { ChatStore } from "./interfaces";
 
 @Store<ChatStore>()
 export class ChatStoreImpl implements ChatStore {
