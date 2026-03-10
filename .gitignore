@@ -1,0 +1,5 @@
+node_modules
+dist
+.helfy
+*.log
+.DS_Store

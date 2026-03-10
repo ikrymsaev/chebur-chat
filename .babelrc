@@ -1,0 +1,3 @@
+{
+  "presets": ["@helfy/helfy/babel-preset"]
+}

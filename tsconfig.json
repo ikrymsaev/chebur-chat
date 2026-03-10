@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "es6",
+    "baseUrl": "src",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "jsx": "preserve",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "plugins": [{ "name": "@helfy/helfy-ts-plugin" }],
+    "paths": {
+      "@context/*": ["./context/*"],
+      "@pages/*": ["./pages/*"],
+      "@shared/*": ["./shared/*"],
+      "@widgets/*": ["./widgets/*"],
+    }
+  },
+  "include": ["src/**/*", ".helfy/**/*", "declaration.d.ts"]
+}
