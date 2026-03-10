@@ -9,7 +9,7 @@ export class Header {
   render() {
     return (
       <div class="header__inner">
-        <Link to="/" label="Helfy" class="header__logo" />
+        <Link to="/" label="Чебур-Чат" class="header__logo" />
         <nav class="nav">
           <Link
             to="/"

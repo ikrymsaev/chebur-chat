@@ -35,7 +35,9 @@ module.exports = {
       '@': path.resolve(__dirname, 'src'),
       '@context': path.resolve(__dirname, 'src/context'),
       '@pages': path.resolve(__dirname, 'src/pages'),
+      '@shared': path.resolve(__dirname, 'src/shared'),
       '@widgets': path.resolve(__dirname, 'src/widgets'),
+      '@features': path.resolve(__dirname, 'src/features'),
     },
   },
   plugins: [

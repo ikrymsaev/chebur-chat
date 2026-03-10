@@ -10,8 +10,13 @@ export class NavBar {
       <nav class="sidebar-nav">
         <Link
           to="/"
-          label="Home"
+          label="Чат"
           class={this.pathname === "/" ? "nav-link nav-link--active" : "nav-link"}
+        />
+        <Link
+          to="/welcome"
+          label="Home"
+          class={this.pathname === "/welcome" ? "nav-link nav-link--active" : "nav-link"}
         />
         <Link
           to="/counter"
