@@ -1,7 +1,0 @@
-{$CADDY_DOMAINS} {
-  reverse_proxy app:80
-}
-
-http:// {
-  reverse_proxy app:80
-}
