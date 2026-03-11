@@ -1,6 +1,9 @@
 services:
   caddy:
     image: caddy:alpine
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       CADDY_DOMAIN: ${CADDY_DOMAIN:-your-domain.com}
     ports:
