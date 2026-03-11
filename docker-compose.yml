@@ -5,8 +5,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_PEER_PATH: /peer
-    ports:
-      - "80:80"
+    # Порты пробрасывает Caddy (см. docker-compose.override.yml). Для HTTP без Caddy — раскомментируйте:
+    # ports:
+    #   - "80:80"
     depends_on:
       - peer
     restart: unless-stopped

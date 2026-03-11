@@ -1,7 +1,4 @@
 services:
-  app:
-    ports: []
-
   caddy:
     image: caddy:alpine
     environment:
