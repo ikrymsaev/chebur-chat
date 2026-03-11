@@ -1,6 +1,8 @@
 const path = require('path');
 const { rspack } = require('@rspack/core');
 
+require('dotenv').config();
+
 const isDev = process.env.NODE_ENV === 'development';
 
 const paths = {
@@ -42,12 +44,19 @@ module.exports = {
       '@storage': path.resolve(__dirname, 'src/storage'),
       '@use-cases': path.resolve(__dirname, 'src/use-cases'),
       '@interfaces': path.resolve(__dirname, 'src/interfaces'),
+      '@persistence': path.resolve(__dirname, 'src/persistence'),
     },
   },
   plugins: [
+    new rspack.DefinePlugin({
+      "process.env.VITE_PEER_HOST": JSON.stringify(process.env.VITE_PEER_HOST || ""),
+      "process.env.VITE_PEER_PORT": JSON.stringify(process.env.VITE_PEER_PORT || ""),
+      "process.env.VITE_PEER_SECURE": JSON.stringify(process.env.VITE_PEER_SECURE || ""),
+      "process.env.VITE_PEER_PATH": JSON.stringify(process.env.VITE_PEER_PATH || "/"),
+    }),
     new rspack.HtmlRspackPlugin({
       template: './index.html',
-      minify: !isDev ? { collapseWhitespace: true } : false,
+      minify: !isDev,
     }),
     new rspack.CssExtractRspackPlugin({
       filename: `css/${isDev ? '[name]' : '[contenthash:8]_[id]'}.css`,

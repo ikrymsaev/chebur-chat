@@ -21,6 +21,7 @@
       "@storage/*": ["./storage/*"],
       "@use-cases/*": ["./use-cases/*"],
       "@interfaces/*": ["./interfaces/*"],
+      "@persistence/*": ["./persistence/*"],
     }
   },
   "include": ["src/**/*", ".helfy/**/*", "declaration.d.ts"]

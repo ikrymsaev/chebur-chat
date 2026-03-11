@@ -6,6 +6,7 @@ import type { ChatStore } from "./interfaces";
 export class ChatStoreImpl implements ChatStore {
   @state messages: Message[] = [];
   @state connectionState: ConnectionState = "idle";
+  @state connectionError: string | null = null;
   @state roomId: string | null = null;
   @state localPeerId: string | null = null;
   @state remotePeerId: string | null = null;
@@ -14,12 +15,20 @@ export class ChatStoreImpl implements ChatStore {
     this.messages = [...this.messages, msg];
   }
 
+  setMessages(messages: Message[]) {
+    this.messages = [...messages];
+  }
+
   clearMessages() {
     this.messages = [];
   }
 
   setConnectionState(state: ConnectionState) {
     this.connectionState = state;
+  }
+
+  setConnectionError(msg: string | null) {
+    this.connectionError = msg;
   }
 
   setRoomId(roomId: string | null) {
@@ -37,6 +46,7 @@ export class ChatStoreImpl implements ChatStore {
   reset() {
     this.messages = [];
     this.connectionState = "idle";
+    this.connectionError = null;
     this.roomId = null;
     this.localPeerId = null;
     this.remotePeerId = null;

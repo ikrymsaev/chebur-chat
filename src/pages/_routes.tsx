@@ -7,6 +7,7 @@ import { ChatPage } from "@pages/ChatPage";
 
 export const routes: RouteConfig[] = [
   { path: "/", component: LobbyPage },
+  { path: "/chat/:roomId", component: ChatPage },
   { path: "/chat", component: ChatPage },
   { path: "/welcome", component: HomePage },
   { path: "/counter", component: CounterPage },

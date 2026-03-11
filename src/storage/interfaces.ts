@@ -4,13 +4,16 @@ import type { ConnectionState, Message, VideoCallState } from "@interfaces/chat"
 export interface ChatStore {
   messages: Message[];
   connectionState: ConnectionState;
+  connectionError: string | null;
   roomId: string | null;
   localPeerId: string | null;
   remotePeerId: string | null;
 
   addMessage(msg: Message): void;
+  setMessages(messages: Message[]): void;
   clearMessages(): void;
   setConnectionState(state: ConnectionState): void;
+  setConnectionError(msg: string | null): void;
   setRoomId(roomId: string | null): void;
   setLocalPeerId(id: string | null): void;
   setRemotePeerId(id: string | null): void;

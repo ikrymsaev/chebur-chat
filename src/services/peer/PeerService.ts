@@ -5,13 +5,23 @@ import { nanoid } from "nanoid";
 import type { PeerService, PeerServiceCallbacks, PeerServiceVideoCallbacks } from "./interface";
 
 
-const PEER_OPTIONS = {
-  host: "localhost",
-  port: 9000,
-  path: "/",
-  secure: false,
-  debug: 0,
-} as const;
+function getPeerOptions() {
+  const host = process.env.VITE_PEER_HOST || (typeof window !== "undefined" ? window.location.hostname : "localhost");
+  const port = process.env.VITE_PEER_PORT
+    ? Number(process.env.VITE_PEER_PORT)
+    : typeof window !== "undefined"
+      ? (window.location.port ? Number(window.location.port) : window.location.protocol === "https:" ? 443 : 80)
+      : 9000;
+  return {
+    host,
+    port,
+    path: process.env.VITE_PEER_PATH || "/",
+    secure: process.env.VITE_PEER_SECURE === "true" || (typeof window !== "undefined" && window.location.protocol === "https:"),
+    debug: 0,
+  };
+}
+
+const PEER_OPTIONS = getPeerOptions();
 
 @Service<PeerService>()
 export class PeerServiceImpl implements PeerService {
@@ -35,6 +45,30 @@ export class PeerServiceImpl implements PeerService {
     this.callbacks?.onStateChange(state);
   }
 
+  private isPeerUnavailable(err: unknown): boolean {
+    const e = err as { message?: string; msg?: string; type?: string };
+    const s = String(e?.message ?? e?.msg ?? err ?? "");
+    return e?.type === "peer-unavailable" || /could not connect|peer-unavailable|peer not found/i.test(s);
+  }
+
+  private isIdTaken(err: unknown): boolean {
+    const e = err as { message?: string; msg?: string; type?: string };
+    const s = String(e?.message ?? e?.msg ?? err ?? "");
+    return e?.type === "unavailable-id" || /is taken|already in use|unavailable-id/i.test(s);
+  }
+
+  private getFriendlyErrorMessage(err: unknown): string {
+    const e = err as { message?: string; msg?: string };
+    const s = String(e?.message ?? e?.msg ?? err ?? "");
+    if (this.isPeerUnavailable(err)) {
+      return "Собеседник недоступен (не в сети или вышел из комнаты)";
+    }
+    if (/network|disconnected|connection/i.test(s)) {
+      return "Ошибка сети. Проверьте подключение и запущен ли Peer‑сервер.";
+    }
+    return "Ошибка подключения";
+  }
+
   createRoom(): string {
     const roomId = nanoid(8);
     this.log.info("Creating room", { roomId });
@@ -56,6 +90,8 @@ export class PeerServiceImpl implements PeerService {
 
     this.peer.on("error", (err) => {
       this.log.error("Peer error", { error: err });
+      const msg = this.getFriendlyErrorMessage(err);
+      this.callbacks?.onError?.(msg);
       this.emitState("error");
     });
 
@@ -72,6 +108,47 @@ export class PeerServiceImpl implements PeerService {
     });
 
     return roomId;
+  }
+
+  reclaimRoom(roomId: string): void {
+    this.log.info("Reclaiming room", { roomId });
+    this.emitState("connecting");
+    this.peer = new Peer(roomId, PEER_OPTIONS);
+
+    this.peer.on("open", () => {
+      this.log.info("Peer open (host reclaimed)", { roomId });
+    });
+
+    this.peer.on("connection", (conn: DataConnection) => {
+      this.log.info("Incoming connection", { from: conn.peer });
+      this.connection = conn;
+      this.setupConnection(conn, roomId, conn.peer);
+    });
+
+    this.setupPeerCallHandler();
+
+    this.peer.on("error", (err) => {
+      this.log.error("Peer error (reclaim)", { error: err });
+      if (this.isIdTaken(err)) {
+        this.callbacks?.onReclaimIdTaken?.(roomId);
+        return;
+      }
+      const msg = this.getFriendlyErrorMessage(err);
+      this.callbacks?.onError?.(msg);
+      this.emitState("error");
+    });
+
+    this.peer.on("disconnected", () => {
+      this.log.warn("Peer disconnected from signaling");
+    });
+
+    this.peer.on("close", () => {
+      this.log.info("Peer closed");
+      this.peer = null;
+      this.connection = null;
+      this.emitState("disconnected");
+      this.callbacks?.onDisconnected();
+    });
   }
 
   joinRoom(roomId: string): void {
@@ -91,6 +168,12 @@ export class PeerServiceImpl implements PeerService {
 
     this.peer.on("error", (err) => {
       this.log.error("Peer error", { error: err });
+      if (this.isPeerUnavailable(err)) {
+        this.callbacks?.onPeerUnavailable?.(roomId);
+        return;
+      }
+      const msg = this.getFriendlyErrorMessage(err);
+      this.callbacks?.onError?.(msg);
       this.emitState("error");
     });
 
@@ -137,6 +220,12 @@ export class PeerServiceImpl implements PeerService {
 
     conn.on("error", (err) => {
       this.log.error("Connection error", { error: err });
+      if (this.isPeerUnavailable(err)) {
+        this.callbacks?.onPeerUnavailable?.(remotePeerId);
+        return;
+      }
+      const msg = this.getFriendlyErrorMessage(err);
+      this.callbacks?.onError?.(msg);
       this.emitState("error");
     });
   }
@@ -164,7 +253,6 @@ export class PeerServiceImpl implements PeerService {
     }
     this.mediaConnection = null;
     this.callbacks = null;
-    this.videoCallbacks = null;
     this.emitState("idle");
   }
 

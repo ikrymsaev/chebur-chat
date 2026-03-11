@@ -1,0 +1,20 @@
+services:
+  app:
+    ports: []
+
+  caddy:
+    image: caddy:alpine
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-your-domain.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  caddy_data:

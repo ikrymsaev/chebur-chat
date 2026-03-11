@@ -1,6 +1,7 @@
 import { View, inject, state, router, effect, type RouterAPI } from "@helfy/helfy";
 import type { ChatStore } from "@storage/index";
 import type { ChatUseCase } from "@use-cases/index";
+import type { RoomRecord } from "@persistence/index";
 
 @View
 export class LobbyPage {
@@ -12,6 +13,13 @@ export class LobbyPage {
   @state private roomIdInput = "";
   @state private createdRoomId: string | null = null;
   @state private mode: "choose" | "create" | "join" = "choose";
+  @state private pastChats: RoomRecord[] = [];
+
+  onMount() {
+    this.chatUseCase.getChatList().then((chats) => {
+      this.pastChats = chats;
+    });
+  }
 
   @effect
   navigateWhenConnected() {
@@ -50,32 +58,66 @@ export class LobbyPage {
     }
   };
 
+  private handleOpenChat(roomId: string) {
+    this.router.push("/chat/" + roomId);
+  };
+
+  private formatChatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   render() {
     return (
       <div class="page lobby">
         <h1>WebRTC Чат</h1>
 
         @if (this.mode === "choose") {
-          <div class="lobby__actions">
-            <button class="btn btn--primary" onclick={() => this.handleCreateRoom()}>
-              Создать комнату
-            </button>
-            <div class="lobby__divider">или</div>
-            <div class="lobby__join">
-              <input
-                type="text"
-                @bind(this.roomIdInput)
-                class="chat-input__field lobby__input"
-                placeholder="Введите ID комнаты"
-              />
-              <button
-                class="btn btn--primary"
-                onclick={() => this.handleJoinRoom()}
-                disabled={!this.roomIdInput.trim()}
-              >
-                Подключиться
+          <div class="lobby__choose">
+            <div class="lobby__actions">
+              <button class="btn btn--primary" onclick={() => this.handleCreateRoom()}>
+                Создать комнату
               </button>
+              <div class="lobby__divider">или</div>
+              <div class="lobby__join">
+                <input
+                  type="text"
+                  @bind(this.roomIdInput)
+                  class="chat-input__field lobby__input"
+                  placeholder="Введите ID комнаты"
+                />
+                <button
+                  class="btn btn--primary"
+                  onclick={() => this.handleJoinRoom()}
+                  disabled={!this.roomIdInput.trim()}
+                >
+                  Подключиться
+                </button>
+              </div>
             </div>
+            @if (this.pastChats.length > 0) {
+              <div class="lobby__history">
+                <h2 class="lobby__history-title">История чатов</h2>
+                <ul class="lobby__chat-list">
+                  @for (room of this.pastChats; track room.roomId) {
+                    <li class="lobby__chat-item">
+                      <button
+                        type="button"
+                        class="lobby__chat-btn"
+                        onclick={() => this.handleOpenChat(room.roomId)}
+                      >
+                        <code class="lobby__chat-room-id">{room.roomId}</code>
+                        <span class="lobby__chat-date">{this.formatChatDate(room.updatedAt)}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
           </div>
         }
 
@@ -96,7 +138,7 @@ export class LobbyPage {
                     : this.store.connectionState === "connected"
                     ? "Подключено! Переход в чат..."
                     : this.store.connectionState === "error"
-                    ? "Ошибка подключения"
+                    ? (this.store.connectionError ?? "Ошибка подключения")
                     : "Ожидание..."}
                 </p>
               </div>
@@ -108,7 +150,7 @@ export class LobbyPage {
                   : this.store.connectionState === "connected"
                   ? "Подключено! Переход в чат..."
                   : this.store.connectionState === "error"
-                  ? "Ошибка подключения. Проверьте ID комнаты."
+                  ? (this.store.connectionError ?? "Ошибка подключения. Проверьте ID комнаты.")
                   : "Подключение к комнате..."}
               </p>
             }

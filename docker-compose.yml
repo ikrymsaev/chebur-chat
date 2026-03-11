@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_PEER_PATH: /peer
+    ports:
+      - "80:80"
+    depends_on:
+      - peer
+    restart: unless-stopped
+
+  peer:
+    image: peerjs/peerjs-server:1.1.0-rc.2
+    command: ["--port", "9000", "--path", "/peer", "--proxied"]
+    restart: unless-stopped
+    # Internal only - accessed via nginx proxy

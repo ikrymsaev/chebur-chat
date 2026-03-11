@@ -2,9 +2,9 @@ import { View } from "@helfy/helfy";
 import type { ConnectionState } from "@interfaces/chat";
 
 interface Props {
-  state: ConnectionState 
+  state: ConnectionState;
+  errorMessage?: string | null;
 }
-
 
 const labels: Record<ConnectionState, string> = {
   idle: "Не подключено",
@@ -22,7 +22,9 @@ export class ConnectionStatus {
     return (
       <div class="connection-status" data-state={this.props.state}>
         <span class="connection-status__indicator" />
-        {labels[this.props.state]}
+        {this.props.state === "error" && this.props.errorMessage
+          ? this.props.errorMessage
+          : labels[this.props.state]}
       </div>
     );
   }

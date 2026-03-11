@@ -5,6 +5,7 @@ import { MediaConnection } from "peerjs";
 export interface PeerService {
     createRoom(): string;
     joinRoom(roomId: string): void;
+    reclaimRoom(roomId: string): void;
     send(payload: ChatPayload): boolean;
     disconnect(): void;
     setCallbacks(cb: PeerServiceCallbacks | null): void;
@@ -19,6 +20,9 @@ export interface PeerServiceCallbacks {
     onDisconnected: () => void;
     onMessage: (payload: ChatPayload) => void;
     onStateChange: (state: ConnectionState) => void;
+    onError?: (message: string) => void;
+    onPeerUnavailable?: (roomId: string) => void;
+    onReclaimIdTaken?: (roomId: string) => void;
 }
   
 export interface PeerServiceVideoCallbacks {

@@ -1,4 +1,4 @@
-import { View, inject, router, type RouterAPI } from "@helfy/helfy";
+import { View, inject, router, params, effect, state, type RouterAPI } from "@helfy/helfy";
 import type { ChatStore, VideoStore } from "@storage/index";
 import type { VideoUseCase, ChatUseCase } from "@use-cases/index";
 import { ConnectionStatus } from "@features/chat/ui/ConnectionStatus";
@@ -11,17 +11,29 @@ import { VideoCallView } from "@features/video/ui/VideoCallView";
 @View
 export class ChatPage {
   @router() private router!: RouterAPI;
+  @params() private routeParams!: Record<string, string>;
 
   @inject<ChatStore>() private store!: ChatStore;
   @inject<ChatUseCase>() private chatUseCase!: ChatUseCase;
   @inject<VideoStore>() private videoStore!: VideoStore;
   @inject<VideoUseCase>() private videoUseCase!: VideoUseCase;
 
+  @state private isLeaving = false;
+
   onMount() {
-    if (this.store.connectionState === "idle" && !this.store.roomId) {
+    this.videoUseCase.setupCallbacks();
+  }
+
+  @effect
+  syncFromRoute() {
+    if (this.isLeaving) return;
+    const roomIdFromUrl = this.routeParams?.roomId;
+    if (roomIdFromUrl && this.store.roomId !== roomIdFromUrl) {
+      this.chatUseCase.openHistory(roomIdFromUrl);
+    }
+    if (this.store.connectionState === "idle" && !this.store.roomId && !roomIdFromUrl) {
       this.router.push("/");
     }
-    this.videoUseCase.setupCallbacks();
   }
 
   private handleSendMessage(text: string) {
@@ -29,6 +41,7 @@ export class ChatPage {
   };
 
   private handleLeave() {
+    this.isLeaving = true;
     this.chatUseCase.leaveRoom();
     this.router.push("/");
   };
@@ -37,7 +50,7 @@ export class ChatPage {
     return (
       <div class="chat">
         <div class="chat__header">
-          <ConnectionStatus state={this.store.connectionState} />
+          <ConnectionStatus state={this.store.connectionState} errorMessage={this.store.connectionError} />
           <span class="chat__room">Комната: {this.store.roomId ?? "—"}</span>
           <VideoCallButton
             disabled={this.store.connectionState !== "connected"}
@@ -58,11 +71,13 @@ export class ChatPage {
         }
 
         @if (this.videoStore.videoCallState === "active") {
-          <VideoCallView
-            localStream={this.videoStore.localStream}
-            remoteStream={this.videoStore.remoteStream}
-            onEnd={() => this.videoUseCase.endVideoCall()}
-          />
+          <div class="chat__video-section">
+            <VideoCallView
+              localStream={this.videoStore.localStream}
+              remoteStream={this.videoStore.remoteStream}
+              onEnd={() => this.videoUseCase.endVideoCall()}
+            />
+          </div>
         }
 
         @if (this.videoStore.videoError) {
@@ -74,15 +89,11 @@ export class ChatPage {
           </div>
         }
 
-        @if (this.videoStore.videoCallState !== "active") {
-          <>
-            <MessageList />
-            <MessageInput
-              onSubmit={(text) => this.handleSendMessage(text)}
-              disabled={this.store.connectionState !== "connected"}
-            />
-          </>
-        }
+        <MessageList />
+        <MessageInput
+          onSubmit={(text) => this.handleSendMessage(text)}
+          disabled={this.store.connectionState !== "connected"}
+        />
       </div>
     );
   }
