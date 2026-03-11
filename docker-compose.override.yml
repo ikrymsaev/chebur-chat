@@ -5,7 +5,7 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     environment:
-      CADDY_DOMAIN: ${CADDY_DOMAIN:-your-domain.com}
+      CADDY_DOMAINS: ${CADDY_DOMAINS:-www.example.com}
     ports:
       - "80:80"
       - "443:443"
